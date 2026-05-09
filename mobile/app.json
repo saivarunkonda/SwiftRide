@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "RidePlatform",
+    "slug": "ride-platform",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "scheme": "rideplatform",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.rideplatform.app"
+    },
+    "android": {
+      "adaptiveIcon": { "backgroundColor": "#0f172a" },
+      "package": "com.rideplatform.app",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+    },
+    "plugins": ["expo-router", "expo-location"],
+    "experiments": { "typedRoutes": true }
+  }
+}

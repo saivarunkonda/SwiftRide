@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package rideplatform.location.v1;
+
+option go_package = "github.com/ride-platform/location-service/proto/location/v1";
+option java_package = "com.rideplatform.proto.location.v1";
+
+// LocationService — internal gRPC interface for service-to-service calls.
+// The public HTTP API (Gin) remains for client-facing traffic.
+service LocationService {
+  // Push a single driver location update
+  rpc UpdateLocation(UpdateLocationRequest) returns (UpdateLocationResponse);
+
+  // Get the latest location for a driver
+  rpc GetLocation(GetLocationRequest) returns (GetLocationResponse);
+
+  // Server-streaming: subscribe to live location updates for a driver
+  rpc StreamLocation(StreamLocationRequest) returns (stream LocationEvent);
+}
+
+message UpdateLocationRequest {
+  string driver_id = 1;
+  double lat       = 2;
+  double lng       = 3;
+  double speed     = 4;
+  double heading   = 5;
+}
+
+message UpdateLocationResponse {
+  bool accepted = 1;
+}
+
+message GetLocationRequest {
+  string driver_id = 1;
+}
+
+message GetLocationResponse {
+  LocationEvent location = 1;
+  bool found             = 2;
+}
+
+message StreamLocationRequest {
+  string driver_id         = 1;
+  int32  interval_seconds  = 2; // polling interval hint
+}
+
+message LocationEvent {
+  string driver_id  = 1;
+  double lat        = 2;
+  double lng        = 3;
+  double speed      = 4;
+  double heading    = 5;
+  int64  timestamp  = 6; // unix millis
+}

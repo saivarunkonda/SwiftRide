@@ -1,0 +1,128 @@
+name: java-services
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/trip-matching-service/**"
+      - "services/surge-pricing-service/**"
+      - "services/notification-service/**"
+      - "services/payment-service/**"
+      - "services/user-service/**"
+      - "services/admin-service/**"
+      - ".github/workflows/java-services.yml"
+
+env:
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      trip-matching: ${{ steps.filter.outputs.trip-matching }}
+      surge-pricing: ${{ steps.filter.outputs.surge-pricing }}
+      notification: ${{ steps.filter.outputs.notification }}
+      payment: ${{ steps.filter.outputs.payment }}
+      user: ${{ steps.filter.outputs.user }}
+      admin: ${{ steps.filter.outputs.admin }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            trip-matching:
+              - 'services/trip-matching-service/**'
+            surge-pricing:
+              - 'services/surge-pricing-service/**'
+            notification:
+              - 'services/notification-service/**'
+            payment:
+              - 'services/payment-service/**'
+            user:
+              - 'services/user-service/**'
+            admin:
+              - 'services/admin-service/**'
+
+  build:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    strategy:
+      matrix:
+        include:
+          - service: trip-matching-service
+            changed: ${{ needs.detect-changes.outputs.trip-matching }}
+            manifest: infra/k8s/trip-matching-service.yaml
+          - service: surge-pricing-service
+            changed: ${{ needs.detect-changes.outputs.surge-pricing }}
+            manifest: infra/k8s/surge-pricing-service.yaml
+          - service: notification-service
+            changed: ${{ needs.detect-changes.outputs.notification }}
+            manifest: infra/k8s/notification-service.yaml
+          - service: payment-service
+            changed: ${{ needs.detect-changes.outputs.payment }}
+            manifest: infra/k8s/payment-service.yaml
+          - service: user-service
+            changed: ${{ needs.detect-changes.outputs.user }}
+            manifest: infra/k8s/user-service.yaml
+          - service: admin-service
+            changed: ${{ needs.detect-changes.outputs.admin }}
+            manifest: infra/k8s/admin-service.yaml
+
+    steps:
+      - uses: actions/checkout@v4
+        if: matrix.changed == 'true'
+
+      - name: Set up Java 21
+        if: matrix.changed == 'true'
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+
+      - name: Run tests
+        if: matrix.changed == 'true'
+        run: mvn -f services/${{ matrix.service }}/pom.xml test --no-transfer-progress
+
+      - name: Configure AWS credentials
+        if: matrix.changed == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Login to ECR
+        if: matrix.changed == 'true'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        if: matrix.changed == 'true'
+        id: tag
+        run: echo "TAG=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        if: matrix.changed == 'true'
+        run: |
+          docker build \
+            -t ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:${{ steps.tag.outputs.TAG }} \
+            -t ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:latest \
+            services/${{ matrix.service }}
+          docker push ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:${{ steps.tag.outputs.TAG }}
+          docker push ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:latest
+
+      - name: Update k8s manifest
+        if: matrix.changed == 'true'
+        run: |
+          sed -i "s|image: .*${{ matrix.service }}.*|image: ${{ env.ECR_REGISTRY }}/${{ matrix.service }}:${{ steps.tag.outputs.TAG }}|" \
+            ${{ matrix.manifest }}
+
+      - name: Commit updated manifest
+        if: matrix.changed == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci: update ${{ matrix.service }} image to ${{ steps.tag.outputs.TAG }}"
+          file_pattern: ${{ matrix.manifest }}

@@ -1,0 +1,40 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: surge-pricing-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
+
+surge:
+  # Geohash precision 5 = ~5km x 5km zone (good city-block granularity)
+  geohash-precision: 5
+  # Sliding window for demand/supply counts
+  window-size-minutes: 5
+  # Surge multiplier thresholds
+  thresholds:
+    - ratio: 1.5   # 1.5x more demand than supply → 1.2x surge
+      multiplier: 1.2
+    - ratio: 2.0
+      multiplier: 1.5
+    - ratio: 3.0
+      multiplier: 2.0
+    - ratio: 5.0
+      multiplier: 3.0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}
+  traces:
+    exporter: otlp
+  service:
+    name: surge-pricing-service
+  propagators: tracecontext,baggage

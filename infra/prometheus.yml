@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "location-service"
+    static_configs:
+      - targets: ["host.docker.internal:8081"]
+
+  - job_name: "trip-matching-service"
+    static_configs:
+      - targets: ["host.docker.internal:8082"]
+
+  - job_name: "surge-pricing-service"
+    static_configs:
+      - targets: ["host.docker.internal:8083"]
+
+  - job_name: "api-gateway"
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+
+  - job_name: "user-service"
+    static_configs:
+      - targets: ["host.docker.internal:8086"]
+
+  - job_name: "admin-service"
+    static_configs:
+      - targets: ["host.docker.internal:8087"]
+
+  - job_name: "notification-service"
+    static_configs:
+      - targets: ["host.docker.internal:8084"]
+
+  - job_name: "payment-service"
+    static_configs:
+      - targets: ["host.docker.internal:8085"]

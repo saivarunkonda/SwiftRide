@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package rideplatform.trip.v1;
+
+option go_package = "github.com/ride-platform/trip-matching-service/proto/trip/v1";
+option java_package = "com.rideplatform.proto.trip.v1";
+
+service TripService {
+  rpc RequestMatch(MatchRequest)     returns (MatchResponse);
+  rpc GetTrip(GetTripRequest)        returns (TripResponse);
+  rpc UpdateTripStatus(TripStatusUpdate) returns (TripResponse);
+}
+
+message MatchRequest {
+  string rider_id    = 1;
+  double pickup_lat  = 2;
+  double pickup_lng  = 3;
+  double dropoff_lat = 4;
+  double dropoff_lng = 5;
+  double radius_km   = 6;
+}
+
+message MatchResponse {
+  string trip_id          = 1;
+  string status           = 2;
+  double surge_multiplier = 3;
+  double estimated_fare   = 4;
+  repeated DriverCandidate candidates = 5;
+}
+
+message DriverCandidate {
+  string driver_id    = 1;
+  double distance_km  = 2;
+  double rating       = 3;
+  double eta_minutes  = 4;
+}
+
+message GetTripRequest {
+  string trip_id = 1;
+}
+
+message TripStatusUpdate {
+  string trip_id   = 1;
+  string status    = 2; // MATCHED, DRIVER_ARRIVING, IN_PROGRESS, COMPLETED, CANCELLED
+  string driver_id = 3;
+  double final_fare = 4;
+}
+
+message TripResponse {
+  string trip_id          = 1;
+  string rider_id         = 2;
+  string driver_id        = 3;
+  string status           = 4;
+  double surge_multiplier = 5;
+  double estimated_fare   = 6;
+  double final_fare       = 7;
+}

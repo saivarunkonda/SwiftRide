@@ -1,0 +1,38 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: user-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:5432/users
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    hikari:
+      maximum-pool-size: 20
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Cognito JWKS endpoint — validates tokens issued by Cognito
+          jwk-set-uri: ${COGNITO_JWKS_URI:https://cognito-idp.us-east-1.amazonaws.com/<pool-id>/.well-known/jwks.json}
+
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}
+  traces:
+    exporter: otlp
+  service:
+    name: user-service
+  propagators: tracecontext,baggage
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus

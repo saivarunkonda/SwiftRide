@@ -1,0 +1,40 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: notification-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
+    consumer:
+      group-id: notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+    listener:
+      ack-mode: MANUAL_IMMEDIATE
+      concurrency: 2
+
+aws:
+  region: ${AWS_REGION:us-east-1}
+  sns:
+    # ARNs created in AWS console / Terraform — see external config section
+    topic-arn-rider: ${SNS_TOPIC_ARN_RIDER:arn:aws:sns:us-east-1:000000000000:rider-notifications}
+    topic-arn-driver: ${SNS_TOPIC_ARN_DRIVER:arn:aws:sns:us-east-1:000000000000:driver-notifications}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}
+  traces:
+    exporter: otlp
+  service:
+    name: notification-service
+  propagators: tracecontext,baggage
