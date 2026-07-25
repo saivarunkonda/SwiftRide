@@ -1,4 +1,4 @@
-# Swwift Ride — Travel with your parterner
+# Swift Ride — Travel with your parterner
 
 ## Stack
 - Go (Gin) — HTTP API
