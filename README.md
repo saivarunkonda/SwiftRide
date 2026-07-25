@@ -1,4 +1,4 @@
-# Ride Platform — Location Service
+# Swwift Ride — Travel with your parterner
 
 ## Stack
 - Go (Gin) — HTTP API
